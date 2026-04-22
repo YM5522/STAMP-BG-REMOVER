@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スタンプ背景透過ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff;
+    --card: #ffffff;
+    --accent: #4f8cff;
+    --accent2: #ff6b9d;
+    --accent3: #00c9a7;
+    --text: #1a1a2e;
+    --muted: #8891b2;
+    --border: #dde3f5;
+    --shadow: 0 4px 24px rgba(79,140,255,0.10);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+  }
+
+  /* Decorative blobs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  body::before {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(79,140,255,0.12), transparent 70%);
+    top: -100px; right: -80px;
+  }
+  body::after {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(255,107,157,0.10), transparent 70%);
+    bottom: 0; left: -60px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 760px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .logo-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    box-shadow: 0 4px 16px rgba(79,140,255,0.3);
+  }
+
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 900;
+    background: linear-gradient(120deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.92rem;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  /* Drop Zone */
+  .drop-zone {
+    padding: 52px 24px;
+    text-align: center;
+    cursor: pointer;
+    border: 2.5px dashed var(--border);
+    border-radius: var(--radius);
+    background: white;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: #f0f5ff;
+  }
+  .drop-zone .icon { font-size: 3rem; margin-bottom: 12px; }
+  .drop-zone h2 { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .drop-zone p { color: var(--muted); font-size: 0.88rem; }
+
+  input[type=file] { display: none; }
+
+  /* Controls */
+  .controls {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .control-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+    min-width: 90px;
+  }
+
+  input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    height: 6px;
+    min-width: 120px;
+  }
+
+  .value-badge {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 2px 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 44px;
+    text-align: center;
+  }
+
+  .btn {
+    padding: 10px 24px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    letter-spacing: 0.2px;
+  }
+  .btn:active { transform: scale(0.96); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #6fa8ff);
+    color: white;
+    box-shadow: 0 4px 14px rgba(79,140,255,0.35);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 20px rgba(79,140,255,0.45); }
+
+  .btn-success {
+    background: linear-gradient(135deg, var(--accent3), #00a891);
+    color: white;
+    box-shadow: 0 4px 14px rgba(0,201,167,0.35);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, var(--accent2), #ff8bb0);
+    color: white;
+    box-shadow: 0 4px 14px rgba(255,107,157,0.35);
+  }
+
+  .btn-sm {
+    padding: 7px 16px;
+    font-size: 0.82rem;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Preview */
+  .preview-section {
+    display: none;
+  }
+  .preview-section.show { display: block; }
+
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1.5px solid var(--border);
+    flex-wrap: gap;
+    gap: 10px;
+  }
+
+  .preview-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+  }
+
+  .preview-tabs {
+    display: flex;
+    gap: 6px;
+  }
+
+  .tab {
+    padding: 5px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .preview-canvas-wrap {
+    overflow: hidden;
+    position: relative;
+    background: repeating-conic-gradient(#e8eaf0 0% 25%, #f8f9fc 0% 50%) 0 0 / 20px 20px;
+    min-height: 260px;
+    height: 60vw;
+    max-height: 480px;
+    touch-action: none;
+    user-select: none;
+  }
+
+  #canvasWrapper {
+    position: absolute;
+    transform-origin: 0 0;
+    top: 0; left: 0;
+  }
+
+  canvas {
+    display: block;
+    border-radius: 4px;
+  }
+
+  .preview-canvas-wrap.dark-bg { background: #1a1a2e; }
+
+  .zoom-hint {
+    position: absolute;
+    bottom: 8px; right: 10px;
+    font-size: 0.72rem;
+    color: rgba(128,128,160,0.8);
+    font-weight: 700;
+    pointer-events: none;
+  }
+
+  .actions {
+    padding: 16px 24px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-top: 1.5px solid var(--border);
+    align-items: center;
+  }
+
+  .hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* Split grid section */
+  .split-section { display: none; }
+  .split-section.show { display: block; }
+
+  .split-header {
+    padding: 16px 24px;
+    border-bottom: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .grid-container {
+    padding: 16px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .stamp-item {
+    background: repeating-conic-gradient(#e8eaf0 0% 25%, #f8f9fc 0% 50%) 0 0 / 12px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  .stamp-item canvas {
+    width: 100%;
+    height: auto;
+    border-radius: 0;
+  }
+
+  .stamp-dl {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    background: rgba(79,140,255,0.9);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .stamp-item:hover .stamp-dl { opacity: 1; }
+
+  .mode-btn { background: var(--bg); border: 1.5px solid var(--border); color: var(--muted); }
+  .mode-btn.active { background: var(--accent2); border-color: var(--accent2); color: white; }
+  .touch-mode-btn { background: var(--bg); border: 1.5px solid var(--border); color: var(--muted); }
+  .touch-mode-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+  .processing-bar {
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    width: 0;
+    transition: width 0.3s;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent3);
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎨</div>
+      <h1>背景透過ツール</h1>
+    </div>
+    <p class="subtitle">LINEスタンプ素材を透明背景PNGに変換 ✨</p>
+  </header>
+
+  <!-- Upload -->
+  <div class="drop-zone" id="dropZone">
+    <div class="icon">🖼️</div>
+    <h2>画像をドロップ or タップして選択</h2>
+    <p>PNG・JPG・WEBP 対応</p>
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <!-- Controls -->
+  <div class="card" id="controlsCard" style="display:none">
+    <div class="controls">
+      <div class="control-row">
+        <span class="control-label">🎯 閾値</span>
+        <input type="range" id="threshold" min="1" max="120" value="40">
+        <span class="value-badge" id="thresholdVal">40</span>
+        <button class="btn btn-primary btn-sm" id="applyBtn">適用</button>
+      </div>
+      <div class="control-row">
+        <span class="control-label">🧹 縁のぼかし</span>
+        <input type="range" id="feather" min="0" max="30" value="8">
+        <span class="value-badge" id="featherVal">8</span>
+      </div>
+      <div class="control-row">
+        <span class="control-label">🔍 輪郭検出</span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="useWallDetect" checked style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer">
+          <span style="font-size:0.82rem;color:var(--muted);font-weight:600">輪郭線を壁にして背景のみ除去</span>
+        </label>
+        <input type="range" id="wallSat" min="20" max="150" value="50" style="flex:1;accent-color:var(--accent);min-width:80px">
+        <span class="value-badge" id="wallSatVal">50</span>
+      </div>
+      <div class="control-row">
+        <span class="control-label">📐 グリッド分割</span>
+        <select id="gridRows" class="value-badge" style="cursor:pointer;padding:4px 8px">
+          <option value="1">1行</option>
+          <option value="2">2行</option>
+          <option value="3">3行</option>
+          <option value="4" selected>4行</option>
+          <option value="5">5行</option>
+        </select>
+        <span style="font-size:0.82rem;color:var(--muted)">×</span>
+        <select id="gridCols" class="value-badge" style="cursor:pointer;padding:4px 8px">
+          <option value="1">1列</option>
+          <option value="2">2列</option>
+          <option value="3">3列</option>
+          <option value="4" selected>4列</option>
+          <option value="5">5列</option>
+        </select>
+        <button class="btn btn-sm" id="splitBtn" style="background:var(--bg);border:1.5px solid var(--border);color:var(--text)">分割する</button>
+      </div>
+    </div>
+    <div class="processing-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Preview -->
+  <div class="card preview-section" id="previewSection">
+    <div class="preview-header">
+      <span class="preview-title">プレビュー</span>
+      <div class="preview-tabs">
+        <button class="tab active" id="tabCheck" onclick="setBg('check')">市松</button>
+        <button class="tab" id="tabDark" onclick="setBg('dark')">暗背景</button>
+        <button class="tab" id="tabWhite" onclick="setBg('white')">白背景</button>
+      </div>
+    </div>
+
+    <!-- Brush toolbar -->
+    <div style="padding:10px 16px;border-bottom:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm touch-mode-btn active" id="touchModePan" onclick="setTouchMode('pan')" style="font-size:1rem">✋ 動かす</button>
+        <button class="btn btn-sm touch-mode-btn" id="touchModeBucket" onclick="setTouchMode('bucket')" style="font-size:1rem">🪣 白消し</button>
+        <button class="btn btn-sm touch-mode-btn" id="touchModeRestore" onclick="setTouchMode('restore')" style="font-size:1rem">↩️ 復元</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:140px">
+        <span style="font-size:0.78rem;font-weight:700;color:var(--muted);white-space:nowrap">許容範囲</span>
+        <input type="range" id="bucketThresh" min="1" max="100" value="30" style="flex:1;accent-color:var(--accent)">
+        <span class="value-badge" id="bucketThreshVal">30</span>
+      </div>
+      <button class="btn btn-sm" id="undoBtn" style="background:var(--bg);border:1.5px solid var(--border);color:var(--text)" disabled>↩ Undo</button>
+      <div style="display:flex;gap:4px;margin-left:auto">
+        <button class="btn btn-sm" onclick="zoomBy(1.5)" style="background:var(--bg);border:1.5px solid var(--border);color:var(--text);font-size:1rem;padding:6px 12px">＋</button>
+        <button class="btn btn-sm" onclick="zoomBy(1/1.5)" style="background:var(--bg);border:1.5px solid var(--border);color:var(--text);font-size:1rem;padding:6px 12px">－</button>
+        <button class="btn btn-sm" onclick="zoomReset()" style="background:var(--bg);border:1.5px solid var(--border);color:var(--text)">全体</button>
+      </div>
+    </div>
+    <div class="preview-canvas-wrap" id="previewWrap">
+      <div id="canvasWrapper">
+        <canvas id="outputCanvas"></canvas>
+      </div>
+      <span class="zoom-hint" id="zoomHint">1.0×</span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-success" id="downloadBtn">⬇️ 透過PNGを保存</button>
+      <button class="btn btn-danger btn-sm" id="resetBtn">🗑️ リセット</button>
+      <span class="hint" id="sizeHint"></span>
+    </div>
+  </div>
+
+  <!-- Split grid -->
+  <div class="card split-section" id="splitSection">
+    <div class="split-header">
+      <span class="preview-title">✂️ 個別スタンプ</span>
+      <button class="btn btn-success btn-sm" id="downloadAllBtn">📦 全部ZIP保存</button>
+    </div>
+    <div class="grid-container" id="stampGrid"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+let originalImg = null;
+let outputImageData = null;
+let currentPixelData = null;
+let undoStack = [];
+let touchMode = 'pan'; // 'pan' | 'bucket' | 'restore'
+let isPainting = false;
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const controlsCard = document.getElementById('controlsCard');
+const previewSection = document.getElementById('previewSection');
+const splitSection = document.getElementById('splitSection');
+const outputCanvas = document.getElementById('outputCanvas');
+const thresholdSlider = document.getElementById('threshold');
+const thresholdVal = document.getElementById('thresholdVal');
+const featherSlider = document.getElementById('feather');
+const featherVal = document.getElementById('featherVal');
+const progressBar = document.getElementById('progressBar');
+const undoBtn = document.getElementById('undoBtn');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+thresholdSlider.addEventListener('input', () => thresholdVal.textContent = thresholdSlider.value);
+featherSlider.addEventListener('input', () => featherVal.textContent = featherSlider.value);
+document.getElementById('bucketThresh').addEventListener('input', () => {
+  document.getElementById('bucketThreshVal').textContent = document.getElementById('bucketThresh').value;
+});
+document.getElementById('wallSat').addEventListener('input', () => {
+  document.getElementById('wallSatVal').textContent = document.getElementById('wallSat').value;
+});
+document.getElementById('applyBtn').addEventListener('click', processImage);
+document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
+document.getElementById('resetBtn').addEventListener('click', reset);
+document.getElementById('splitBtn').addEventListener('click', splitGrid);
+document.getElementById('downloadAllBtn').addEventListener('click', downloadAll);
+undoBtn.addEventListener('click', doUndo);
+
+// ── Zoom/pan state ──
+let zoom = { scale: 1, x: 0, y: 0 };
+let pinchStart = null;
+
+function applyTransform() {
+  const w = document.getElementById('canvasWrapper');
+  w.style.transform = `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`;
+  document.getElementById('zoomHint').textContent = zoom.scale.toFixed(1) + '×';
+}
+
+function zoomBy(factor, cx, cy) {
+  const wrap = document.getElementById('previewWrap');
+  if (cx == null) { cx = wrap.clientWidth / 2; cy = wrap.clientHeight / 2; }
+  const newScale = Math.min(12, Math.max(0.3, zoom.scale * factor));
+  // Adjust pan so the point under the pinch center stays fixed
+  zoom.x = cx - (cx - zoom.x) * (newScale / zoom.scale);
+  zoom.y = cy - (cy - zoom.y) * (newScale / zoom.scale);
+  zoom.scale = newScale;
+  clampPan();
+  applyTransform();
+}
+
+function clampPan() {
+  const wrap = document.getElementById('previewWrap');
+  const cw = outputCanvas.width * zoom.scale;
+  const ch = outputCanvas.height * zoom.scale;
+  const ww = wrap.clientWidth;
+  const wh = wrap.clientHeight;
+  // xの範囲: 右端が見えるように、かつ左端も見えるように
+  const minX = Math.min(0, ww - cw);
+  const maxX = Math.max(0, ww - cw);
+  zoom.x = Math.min(maxX, Math.max(minX, zoom.x));
+  const minY = Math.min(0, wh - ch);
+  const maxY = Math.max(0, wh - ch);
+  zoom.y = Math.min(maxY, Math.max(minY, zoom.y));
+}
+
+function zoomReset() {
+  const wrap = document.getElementById('previewWrap');
+  const fitScale = Math.min(wrap.clientWidth / outputCanvas.width, wrap.clientHeight / outputCanvas.height);
+  zoom.scale = fitScale;
+  zoom.x = (wrap.clientWidth - outputCanvas.width * fitScale) / 2;
+  zoom.y = (wrap.clientHeight - outputCanvas.height * fitScale) / 2;
+  applyTransform();
+}
+
+// ── Touch events ──
+const previewWrap = document.getElementById('previewWrap');
+
+previewWrap.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    isPainting = false;
+    pinchStart = getPinchInfo(e.touches);
+    return;
+  }
+  if (e.touches.length === 1) {
+    if (touchMode === 'pan') {
+      pinchStart = { panX: zoom.x, panY: zoom.y, cx: e.touches[0].clientX, cy: e.touches[0].clientY, dist: 1, scale: zoom.scale, canvasCx: 0, canvasCy: 0 };
+    } else {
+      // bucket or restore: record tap start position to detect tap vs drag
+      isPainting = true;
+      pinchStart = { panX: zoom.x, panY: zoom.y, cx: e.touches[0].clientX, cy: e.touches[0].clientY, dist: 1, scale: zoom.scale, canvasCx: 0, canvasCy: 0, tapX: e.touches[0].clientX, tapY: e.touches[0].clientY };
+    }
+  }
+}, { passive: false });
+
+previewWrap.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 2 && pinchStart && pinchStart.dist > 1) {
+    const cur = getPinchInfo(e.touches);
+    const newScale = Math.min(12, Math.max(0.3, pinchStart.scale * (cur.dist / pinchStart.dist)));
+    zoom.scale = newScale;
+    zoom.x = pinchStart.panX + (cur.cx - pinchStart.cx) + pinchStart.canvasCx * (pinchStart.scale - newScale);
+    zoom.y = pinchStart.panY + (cur.cy - pinchStart.cy) + pinchStart.canvasCy * (pinchStart.scale - newScale);
+    clampPan();
+    applyTransform();
+  } else if (e.touches.length === 1 && pinchStart) {
+    if (touchMode === 'pan') {
+      zoom.x = pinchStart.panX + (e.touches[0].clientX - pinchStart.cx);
+      zoom.y = pinchStart.panY + (e.touches[0].clientY - pinchStart.cy);
+      clampPan();
+      applyTransform();
+    }
+    // For bucket/restore: mark as dragged if moved too much (cancel tap)
+    if (pinchStart.tapX != null) {
+      const dx = e.touches[0].clientX - pinchStart.tapX;
+      const dy = e.touches[0].clientY - pinchStart.tapY;
+      if (dx*dx + dy*dy > 100) isPainting = false; // moved >10px, cancel
+    }
+  }
+}, { passive: false });
+
+previewWrap.addEventListener('touchend', e => {
+  e.preventDefault();
+  if (e.touches.length === 0) {
+    // Tap completed for bucket/restore
+    if (isPainting && pinchStart && pinchStart.tapX != null && currentPixelData) {
+      const pos = clientToCanvas(pinchStart.tapX, pinchStart.tapY);
+      undoStack.push(new Uint8ClampedArray(currentPixelData.data));
+      if (undoStack.length > 20) undoStack.shift();
+      undoBtn.disabled = false;
+      if (touchMode === 'bucket') floodFill(pos.x, pos.y, false);
+      else if (touchMode === 'restore') floodFill(pos.x, pos.y, true);
+    }
+    isPainting = false;
+    pinchStart = null;
+  }
+  if (e.touches.length === 1 && touchMode === 'pan') {
+    pinchStart = { panX: zoom.x, panY: zoom.y, cx: e.touches[0].clientX, cy: e.touches[0].clientY, dist: 1, scale: zoom.scale, canvasCx: 0, canvasCy: 0 };
+  }
+}, { passive: false });
+
+function getPinchInfo(touches) {
+  const rect = previewWrap.getBoundingClientRect();
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  const cx = (touches[0].clientX + touches[1].clientX) / 2;
+  const cy = (touches[0].clientY + touches[1].clientY) / 2;
+  return {
+    dist: Math.sqrt(dx*dx + dy*dy),
+    cx, cy,
+    scale: zoom.scale,
+    panX: zoom.x, panY: zoom.y,
+    canvasCx: (cx - rect.left - zoom.x) / zoom.scale,
+    canvasCy: (cy - rect.top  - zoom.y) / zoom.scale,
+  };
+}
+
+// ── Mouse events (desktop) ──
+outputCanvas.addEventListener('click', e => {
+  if (touchMode === 'pan' || !currentPixelData) return;
+  const pos = clientToCanvas(e.clientX, e.clientY);
+  undoStack.push(new Uint8ClampedArray(currentPixelData.data));
+  if (undoStack.length > 20) undoStack.shift();
+  undoBtn.disabled = false;
+  floodFill(pos.x, pos.y, touchMode === 'restore');
+});
+outputCanvas.addEventListener('mousedown', e => { if (touchMode !== 'pan') e.stopPropagation(); });
+// Mouse wheel zoom
+previewWrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = previewWrap.getBoundingClientRect();
+  zoomBy(e.deltaY < 0 ? 1.15 : 1/1.15, e.clientX - rect.left, e.clientY - rect.top);
+}, { passive: false });
+
+function setMode(m) {}  // kept for compat
+
+function setTouchMode(m) {
+  touchMode = m;
+  document.querySelectorAll('.touch-mode-btn').forEach(b => b.classList.remove('active'));
+  const ids = { pan: 'touchModePan', bucket: 'touchModeBucket', restore: 'touchModeRestore' };
+  document.getElementById(ids[m]).classList.add('active');
+  previewWrap.style.cursor = m === 'pan' ? 'grab' : 'crosshair';
+}
+
+function floodFill(sx, sy, restore) {
+  if (!currentPixelData) return;
+  const d = currentPixelData.data;
+  const w = currentPixelData.width, h = currentPixelData.height;
+  const bucketT = parseInt(document.getElementById('bucketThresh').value);
+
+  if (sx < 0 || sx >= w || sy < 0 || sy >= h) return;
+
+  const si = (sy * w + sx) * 4;
+  const targetA = d[si + 3];
+
+  // If restore mode: just flood-fill transparent region with original pixels
+  if (restore) {
+    if (targetA > 0) return; // not transparent, nothing to restore
+    const visited = new Uint8Array(w * h);
+    const queue = [sx + sy * w];
+    visited[sx + sy * w] = 1;
+    let qi = 0;
+    while (qi < queue.length) {
+      const idx = queue[qi++];
+      const px = idx % w, py = Math.floor(idx / w);
+      const s = idx * 4;
+      if (d[s + 3] === 0) {
+        const orig = getOrigPixel(px, py);
+        d[s] = orig[0]; d[s+1] = orig[1]; d[s+2] = orig[2]; d[s+3] = 255;
+      }
+      for (const [nx, ny] of [[px+1,py],[px-1,py],[px,py+1],[px,py-1]]) {
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+        const ni = ny * w + nx;
+        if (visited[ni]) continue;
+        if (d[ni*4+3] === 0) { visited[ni] = 1; queue.push(ni); }
+      }
+    }
+    outputCanvas.getContext('2d').putImageData(currentPixelData, 0, 0);
+    return;
+  }
+
+  // Bucket (erase): flood fill connected similar-colored region → transparent
+  const tr = d[si], tg = d[si+1], tb = d[si+2];
+  // If already transparent, nothing to do
+  if (targetA === 0) return;
+
+  const visited = new Uint8Array(w * h);
+  const queue = [sx + sy * w];
+  visited[sx + sy * w] = 1;
+  let qi = 0;
+  while (qi < queue.length) {
+    const idx = queue[qi++];
+    const s = idx * 4;
+    d[s + 3] = 0; // make transparent
+    const px = idx % w, py = Math.floor(idx / w);
+    for (const [nx, ny] of [[px+1,py],[px-1,py],[px,py+1],[px,py-1]]) {
+      if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+      const ni = ny * w + nx;
+      if (visited[ni] || d[ni*4+3] === 0) continue;
+      const dr = d[ni*4]-tr, dg = d[ni*4+1]-tg, db = d[ni*4+2]-tb;
+      if (Math.sqrt(dr*dr+dg*dg+db*db) <= bucketT) {
+        visited[ni] = 1;
+        queue.push(ni);
+      }
+    }
+  }
+  outputCanvas.getContext('2d').putImageData(currentPixelData, 0, 0);
+}
+
+function clientToCanvas(clientX, clientY) {
+  const rect = previewWrap.getBoundingClientRect();
+  const localX = clientX - rect.left;
+  const localY = clientY - rect.top;
+  return {
+    x: Math.round((localX - zoom.x) / zoom.scale),
+    y: Math.round((localY - zoom.y) / zoom.scale)
+  };
+}
+
+function brushApply({x, y}) {
+  if (!currentPixelData) return;
+  const w = currentPixelData.width, h = currentPixelData.height;
+  const d = currentPixelData.data;
+  const r = parseInt(brushSizeSlider.value);
+  const thresh = parseInt(thresholdSlider.value);
+
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx*dx + dy*dy > r*r) continue;
+      const px = x+dx, py = y+dy;
+      if (px < 0 || px >= w || py < 0 || py >= h) continue;
+      const idx = (py * w + px) * 4;
+      if (brushMode === 'erase') {
+        if (isBackground(d[idx], d[idx+1], d[idx+2], thresh)) d[idx+3] = 0;
+      } else {
+        const orig = getOrigPixel(px, py);
+        d[idx] = orig[0]; d[idx+1] = orig[1]; d[idx+2] = orig[2]; d[idx+3] = 255;
+      }
+    }
+  }
+  outputCanvas.getContext('2d').putImageData(currentPixelData, 0, 0);
+}
+
+let origCanvas = null;
+function getOrigPixel(x, y) {
+  if (!origCanvas) return [255,255,255,255];
+  const ctx = origCanvas.getContext('2d');
+  const d = ctx.getImageData(x, y, 1, 1).data;
+  return d;
+}
+
+function doUndo() {
+  if (!undoStack.length || !currentPixelData) return;
+  const snap = undoStack.pop();
+  currentPixelData.data.set(snap);
+  const ctx = outputCanvas.getContext('2d');
+  ctx.putImageData(currentPixelData, 0, 0);
+  if (!undoStack.length) undoBtn.disabled = true;
+}
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      originalImg = img;
+      // Keep original canvas for restore brush
+      origCanvas = document.createElement('canvas');
+      origCanvas.width = img.naturalWidth;
+      origCanvas.height = img.naturalHeight;
+      origCanvas.getContext('2d').drawImage(img, 0, 0);
+      controlsCard.style.display = 'block';
+      splitSection.classList.remove('show');
+      undoStack = [];
+      undoBtn.disabled = true;
+      processImage();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function setProgress(v) {
+  progressBar.style.width = v + '%';
+}
+
+function processImage() {
+  if (!originalImg) return;
+  setProgress(10);
+
+  const thresh = parseInt(thresholdSlider.value);
+  const feather = parseInt(featherSlider.value);
+
+  setTimeout(() => {
+    const src = document.createElement('canvas');
+    src.width = originalImg.naturalWidth;
+    src.height = originalImg.naturalHeight;
+    const ctx = src.getContext('2d');
+    ctx.drawImage(originalImg, 0, 0);
+
+    setProgress(30);
+    const imageData = ctx.getImageData(0, 0, src.width, src.height);
+    const data = imageData.data;
+    const w = src.width, h = src.height;
+
+    const useWall = document.getElementById('useWallDetect').checked;
+    const wallSat = parseInt(document.getElementById('wallSat').value);
+    const dilate = 2; // 壁を2px膨張させてギャップを完全に塞ぐ
+
+    // Step 0: 壁マスクを生成 → ダイレーションで強化
+    const wallMask = new Uint8Array(w * h);
+    if (useWall) {
+      // 彩度が高い or 暗いピクセルを壁としてマーク
+      for (let i = 0; i < w * h; i++) {
+        const s = i * 4;
+        const r = data[s], g = data[s+1], b = data[s+2];
+        const sat = Math.max(r,g,b) - Math.min(r,g,b);
+        const lum = (r+g+b)/3;
+        if (sat > wallSat || lum < 80) wallMask[i] = 1;
+      }
+      // ダイレーション: 壁を周囲に膨張させてアンチエイリアスの隙間を塞ぐ
+      const dilated = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          if (!wallMask[y*w+x]) continue;
+          for (let dy = -dilate; dy <= dilate; dy++) {
+            for (let dx = -dilate; dx <= dilate; dx++) {
+              const nx = x+dx, ny = y+dy;
+              if (nx>=0 && nx<w && ny>=0 && ny<h) dilated[ny*w+nx] = 1;
+            }
+          }
+        }
+      }
+      dilated.forEach((v,i) => { if(v) wallMask[i] = 1; });
+    }
+
+    // Step 1: エッジからBFS、壁マスクで完全停止
+    const visited = new Uint8Array(w * h);
+    const queue = [];
+
+    function enqueue(x, y) {
+      const idx = y * w + x;
+      if (x < 0 || x >= w || y < 0 || y >= h || visited[idx]) return;
+      if (wallMask[idx]) return; // 壁は絶対通過しない
+      const d = idx * 4;
+      const r = data[d], g = data[d+1], b = data[d+2];
+      if (isBackground(r, g, b, thresh)) {
+        visited[idx] = 1;
+        queue.push(x, y);
+      }
+    }
+
+    // Seed from all 4 edges
+    for (let x = 0; x < w; x++) { enqueue(x, 0); enqueue(x, h-1); }
+    for (let y = 0; y < h; y++) { enqueue(0, y); enqueue(w-1, y); }
+
+    // BFS
+    let qi = 0;
+    while (qi < queue.length) {
+      const x = queue[qi++], y = queue[qi++];
+      enqueue(x+1, y); enqueue(x-1, y);
+      enqueue(x, y+1); enqueue(x, y-1);
+    }
+
+    setProgress(60);
+
+    // Step 2: Apply alpha
+    const out = ctx.createImageData(w, h);
+    const od = out.data;
+    for (let i = 0; i < w * h; i++) {
+      const s = i * 4;
+      od[s] = data[s]; od[s+1] = data[s+1]; od[s+2] = data[s+2];
+      if (visited[i]) {
+        od[s+3] = 0;
+      } else {
+        // Feather: if near background, partially transparent
+        const r = data[s], g = data[s+1], b = data[s+2];
+        const dist = bgDistance(r, g, b);
+        if (feather > 0 && dist < feather * 4) {
+          const alpha = Math.round((dist / (feather * 4)) * 255);
+          od[s+3] = alpha;
+        } else {
+          od[s+3] = 255;
+        }
+      }
+    }
+
+    setProgress(70);
+
+    setProgress(85);
+
+    outputCanvas.width = w;
+    outputCanvas.height = h;
+    const outCtx = outputCanvas.getContext('2d');
+    outCtx.putImageData(out, 0, 0);
+
+    outputImageData = out;
+    currentPixelData = outCtx.getImageData(0, 0, w, h);
+    undoStack = [];
+    undoBtn.disabled = true;
+    outputCanvas.style.cursor = 'crosshair';
+    setTimeout(zoomReset, 10);
+    previewSection.classList.add('show');
+    document.getElementById('sizeHint').textContent = `${w} × ${h} px`;
+    setProgress(100);
+    setTimeout(() => setProgress(0), 600);
+  }, 10);
+}
+
+function isBackground(r, g, b, thresh) {
+  // White-ish
+  return r > 255 - thresh && g > 255 - thresh && b > 255 - thresh;
+}
+
+function bgDistance(r, g, b) {
+  return Math.min(255 - r, 255 - g, 255 - b);
+}
+
+function setBg(type) {
+  const wrap = document.getElementById('previewWrap');
+  wrap.className = 'preview-canvas-wrap';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (type === 'dark') {
+    wrap.classList.add('dark-bg');
+    document.getElementById('tabDark').classList.add('active');
+  } else if (type === 'white') {
+    wrap.style.background = 'white';
+    document.getElementById('tabWhite').classList.add('active');
+    return;
+  } else {
+    document.getElementById('tabCheck').classList.add('active');
+  }
+  wrap.style.background = '';
+}
+
+function downloadPNG() {
+  const dataUrl = outputCanvas.toDataURL('image/png');
+  // モーダルで画像表示 → 長押しで保存
+  let modal = document.getElementById('saveModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'saveModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px';
+    modal.innerHTML = `
+      <div style="background:#1a1a2e;border-radius:16px;padding:20px;max-width:380px;width:100%;text-align:center">
+        <p style="color:white;font-size:0.95rem;font-weight:700;margin-bottom:4px">📥 画像を長押し → 保存</p>
+        <p style="color:#8891b2;font-size:0.78rem;margin-bottom:14px">「"ファイル"に保存」→ PNG形式で保存してください<br>（「写真に追加」はJPEGになり透過が消えます）</p>
+        <div style="background:repeating-conic-gradient(#2a2a3e 0% 25%,#1a1a2e 0% 50%) 0 0/16px 16px;border-radius:10px;padding:8px;margin-bottom:14px">
+          <img id="saveModalImg" style="max-width:100%;max-height:60vh;border-radius:6px;display:block;margin:auto">
+        </div>
+        <button onclick="document.getElementById('saveModal').style.display='none'" style="background:#ff6b9d;border:none;color:white;font-weight:800;font-size:0.9rem;padding:10px 28px;border-radius:12px;cursor:pointer;font-family:inherit">閉じる</button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  document.getElementById('saveModalImg').src = dataUrl;
+  modal.style.display = 'flex';
+}
+
+function reset() {
+  originalImg = null;
+  outputImageData = null;
+  previewSection.classList.remove('show');
+  splitSection.classList.remove('show');
+  controlsCard.style.display = 'none';
+  fileInput.value = '';
+}
+
+function splitGrid() {
+  if (!outputImageData) return;
+  const rows = parseInt(document.getElementById('gridRows').value);
+  const cols = parseInt(document.getElementById('gridCols').value);
+  const w = outputCanvas.width, h = outputCanvas.height;
+  const sw = Math.floor(w / cols), sh = Math.floor(h / rows);
+
+  const grid = document.getElementById('stampGrid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+  const src = outputCanvas;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const item = document.createElement('div');
+      item.className = 'stamp-item';
+
+      const cv = document.createElement('canvas');
+      cv.width = sw; cv.height = sh;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(src, c * sw, r * sh, sw, sh, 0, 0, sw, sh);
+
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'stamp-dl';
+      dlBtn.textContent = '⬇️';
+      dlBtn.addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.download = `stamp_${r+1}_${c+1}.png`;
+        a.href = cv.toDataURL('image/png');
+        a.click();
+      });
+
+      item.appendChild(cv);
+      item.appendChild(dlBtn);
+      grid.appendChild(item);
+    }
+  }
+
+  splitSection.classList.add('show');
+  splitSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function downloadAll() {
+  const canvases = document.querySelectorAll('#stampGrid canvas');
+  if (!canvases.length) return;
+  const zip = new JSZip();
+  let i = 1;
+  for (const cv of canvases) {
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    zip.file(`stamp_${String(i).padStart(2,'0')}.png`, blob);
+    i++;
+  }
+  const content = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.download = 'stamps.zip';
+  a.href = URL.createObjectURL(content);
+  a.click();
+}
+</script>
+</body>
+</html>
